@@ -29,7 +29,7 @@ discount_rate = 0.99
 exploration_rate = 1
 max_exploration_rate = 1
 min_exploration_rate = 0.01
-exploration_decay_rate = 0.001
+exploration_decay_rate = 0.01
 
 
 all_episodes_reward = []
@@ -66,7 +66,7 @@ for episode in range(episodes):
             1 - learning_rate
         ) + learning_rate * (reward + discount_rate * np.max(q_table[observation, :]))
 
-        print(reward, q_table)
+        print(reward, exploration_rate, q_table)
 
         state = observation
         current_reward += reward
@@ -76,7 +76,7 @@ for episode in range(episodes):
 
     exploration_rate = min_exploration_rate + (
         max_exploration_rate - min_exploration_rate
-    ) * np.exp(-exploration_rate * episode)
+    ) * np.exp(-exploration_decay_rate * episode)
 
     all_episodes_reward.append(current_reward)
 

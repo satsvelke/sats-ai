@@ -7,6 +7,7 @@ import torch.nn as nn
 import time
 from torch.utils.data import DataLoader, TensorDataset
 from sklearn.model_selection import train_test_split
+from tqdm import tqdm
 
 
 
@@ -20,19 +21,30 @@ if torch.backends.mps.is_available():
     print (x)
 
 try:
-    data = pd.read_csv("enggindia.csv")
+    data = pd.read_csv("NSEI_23_all.csv")
 except pd.errors.EmptyDataError:
     print("empty csv file")
 
 
+
+data = data.dropna()
+
+
 print('no. of rows in csv ' + str(len(data)))
 
-data["Date"] = pd.to_datetime(data["Date"])
+# data["Date"] = pd.to_datetime(data["Date"], format="%Y-%m-%d")
 
-features = data[["Open Price", "High Price", "Low Price", "Close Price", "WAP", "No.of Shares",
-                 "No. of Trades", "Total Turnover (Rs.)", "Spread High-Low", "Spread Close-Open"]].values
+# features = data[["Open Price", "High Price", "Low Price", "Close Price", "WAP", "No.of Shares",
+#                  "No. of Trades", "Total Turnover (Rs.)", "Spread High-Low", "Spread Close-Open"]].values
 
-target = data["Close Price"].values
+features = data[["Open","High","Low","Close","Volume"]].values
+
+target = data["Close"].values
+# target = data["Close Price"].values
+
+print(data.isnull().sum())  # Check for missing values
+print(np.any(np.isnan(features)))  # Check for NaNs in features
+print(np.any(np.isnan(target)))  # Check for NaNs in target
 
 
 # Normalize features (you can use other scaling methods as well)
@@ -53,7 +65,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 train_dataset = TensorDataset(X_train, y_train)
 test_dataset = TensorDataset(X_test, y_test)
 
-batch_size = 64
+batch_size = 32
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=batch_size)
 
@@ -73,13 +85,13 @@ model = LinearRegressionModel(input_dim)
 
 # Loss function and optimizer
 criterion = nn.MSELoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+optimizer = torch.optim.SGD(model.parameters(), lr=0.001)
 
 # Training loop
-num_epochs = 35000
+num_epochs = 60000
 start_time = time.time()  # Record the start time
 
-for epoch in range(num_epochs):
+for epoch in tqdm(range(num_epochs), desc="Training Progress"):
     for batch_x, batch_y in train_loader:
         optimizer.zero_grad()
         outputs = model(batch_x)
@@ -88,7 +100,7 @@ for epoch in range(num_epochs):
         optimizer.step()
 
     # Print the loss for each epoch
-    print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
+   # print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
 
 
 end_time = time.time()  # Record the end time
@@ -115,4 +127,4 @@ checkpoint = {
     'scaler': scaler  # Save the scaler for preprocessing new data during prediction
 }
 
-torch.save(checkpoint, 'stock_model_checkpoint_engg.pth')
+torch.save(checkpoint, 'stock_model_checkpoint_all_NSE.pth')
